@@ -1,0 +1,12 @@
+[
+  { "id": 1, "category": "Core Concepts", "query": "What is Java and why is it platform independent?" },
+  { "id": 2, "category": "Core Concepts", "query": "Explain the difference between JDK, JRE, and JVM." },
+  { "id": 3, "category": "Core Concepts", "query": "What does the Java compiler do, and what does the Java interpreter do?" },
+  { "id": 4, "category": "Core Concepts", "query": "What is bytecode in Java?" },
+  { "id": 5, "category": "Syntax & Operators", "query": "What are primitive data types in Java?" },
+  { "id": 6, "category": "Syntax & Operators", "query": "What is a variable in Java and what four aspects are associated with it?" },
+  { "id": 7, "category": "OOP Concepts", "query": "What is a class in Java and how does it relate to an object?" },
+  { "id": 8, "category": "Exceptions & Strings", "query": "How does exception handling work using try, catch, and finally?" },
+  { "id": 9, "category": "Edge Cases & Short Queries", "query": "compiler vs interpreter" },
+  { "id": 10, "category": "Out of Scope (Fallback Test)", "query": "What is the capital of France?", "expect_fallback": true }
+]

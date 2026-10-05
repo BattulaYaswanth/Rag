@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+docs
+# Virtual environments
+.venv
+.env
+.git
+vector_db
+ingest_run.log
+vector_db_backup.tar.gz
+evaluation_logs.jsonl
+docker_build*
+.ruff*
+.pytest*

@@ -1,0 +1,62 @@
+[project]
+name = "advanced-rag"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Yaswanth", email = "yashmanic96@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "chromadb>=1.5.9",
+    "einops>=0.8.2",
+    "faiss-cpu>=1.15.1",
+    "fonttools>=4.66.1",
+    "ftfy>=6.3.1",
+    "langchain>=1.4.3",
+    "langchain-chroma>=1.1.0",
+    "langchain-community>=0.4.2",
+    "langchain-core>=1.6.6",
+    "langchain-experimental>=0.4.2",
+    "langchain-huggingface>=1.2.2",
+    "langgraph>=1.2.12",
+    "numpy>=2.5.3",
+    "pypdf>=6.19.0",
+    "python-docx>=1.2.0",
+    "python-dotenv>=1.2.4",
+    "rank-bm25>=0.2.2",
+    "rapidfuzz>=3.14.6",
+    "requests>=2.34.2",
+    "sqlalchemy>=2.1.2",
+    "sentence-transformers==3.3.1",
+    "transformers==4.46.3",
+    "langchain-ollama>=1.1.0",
+    "fastapi>=0.142.2",
+]
+[project.scripts]
+advanced-rag = "advanced_rag:main"
+
+[build-system]
+requires = ["uv_build>=0.12.18,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "DTZ", "RUF"]
+# BLE001: broad `except Exception` is deliberate in eval/ingest fallback chains.
+# E501: long prompt/SQL string literals are exempt from line length.
+ignore = ["BLE001", "E501"]
+
