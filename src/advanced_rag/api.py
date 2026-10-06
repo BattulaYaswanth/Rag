@@ -117,7 +117,8 @@ def openai_chat_completion(req: ChatCompletionRequest) -> dict[str, Any]:
 
 @lru_cache(maxsize=4)
 def _get_pipeline(model: str | None, evaluate: bool) -> RAGPipeline:
-    return RAGPipeline(llm_model=model or config.OLLAMA_MODEL, enable_eval=evaluate)
+    # model=None -> provider default (never force the Ollama id here).
+    return RAGPipeline(llm_model=model, enable_eval=evaluate)
 
 
 @app.get("/health")
