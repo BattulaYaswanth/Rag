@@ -2,13 +2,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchHealth, postQuery } from "./api.js";
 
 function HealthBadge({ health }) {
-  if (health === undefined) return <span className="badge idle">checking…</span>;
-  if (health === null) return <span className="badge down">backend unreachable</span>;
+  if (health === undefined)
+    return <span className="badge idle">checking…</span>;
+  if (health === null)
+    return <span className="badge down">backend unreachable</span>;
   const db = health.vector_db || {};
   const col = (db.collections || [])[0];
   return (
     <span className="badge up" title={JSON.stringify(health)}>
-      {health.llm?.provider}:{health.llm?.model} · {col ? `${col.count} chunks` : "no index"}
+      {health.llm?.provider}:{health.llm?.model} ·{" "}
+      {col ? `${col.count} chunks` : "no index"}
     </span>
   );
 }
@@ -19,14 +22,16 @@ function Sources({ sources }) {
   return (
     <div className="sources">
       <button className="link" onClick={() => setOpen((v) => !v)}>
-        {open ? "▾" : "▸"} {sources.length} source{sources.length > 1 ? "s" : ""}
+        {open ? "▾" : "▸"} {sources.length} source
+        {sources.length > 1 ? "s" : ""}
       </button>
       {open &&
         sources.map((s, i) => (
           <blockquote key={i}>
             <div className="meta">
               #{i + 1}
-              {s.metadata?.chunk_id !== undefined && ` · chunk ${s.metadata.chunk_id}`}
+              {s.metadata?.chunk_id !== undefined &&
+                ` · chunk ${s.metadata.chunk_id}`}
             </div>
             {s.content}
           </blockquote>
@@ -47,12 +52,17 @@ export default function App() {
 
   useEffect(() => {
     const ctrl = new AbortController();
-    fetchHealth(ctrl.signal).then(setHealth).catch(() => setHealth(null));
+    fetchHealth(ctrl.signal)
+      .then(setHealth)
+      .catch(() => setHealth(null));
     return () => ctrl.abort();
   }, []);
 
   useEffect(() => {
-    logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
+    logRef.current?.scrollTo({
+      top: logRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   }, [messages, busy]);
 
   const ask = useCallback(async () => {
@@ -94,14 +104,20 @@ export default function App() {
           />
         </label>
         <label className="check">
-          <input type="checkbox" checked={evaluate} onChange={(e) => setEvaluate(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={evaluate}
+            onChange={(e) => setEvaluate(e.target.checked)}
+          />
           Evaluate answer
         </label>
       </div>
 
       <div className="log" ref={logRef}>
         {messages.length === 0 && (
-          <p className="hint">Ask anything about your documents, e.g. “What is bytecode in Java?”</p>
+          <p className="hint">
+            Ask anything about your documents, e.g. “What is bytecode in Java?”
+          </p>
         )}
         {messages.map((m, i) =>
           m.role === "user" ? (
@@ -112,12 +128,13 @@ export default function App() {
             <div className="a-wrap" key={i}>
               <div className="a">{m.answer}</div>
               <div className="src">
-                via {m.llm} · {m.context_used_count} chunk{m.context_used_count === 1 ? "" : "s"}
+                via {m.llm} · {m.context_used_count} chunk
+                {m.context_used_count === 1 ? "" : "s"}
                 {m.evaluation && ` · eval ${m.evaluation.overall_score}`}
               </div>
               <Sources sources={m.sources} />
             </div>
-          )
+          ),
         )}
         {busy && <div className="a thinking">Thinking…</div>}
       </div>
