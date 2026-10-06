@@ -1,0 +1,26 @@
+# Served static build + /api/* reverse proxy to the RAG backend.
+# Rendered at container start: ${BACKEND_URL} is substituted (full origin,
+# e.g. http://host.containers.internal:8000). Nginx vars are $$-escaped
+# so envsubst leaves them alone.
+server {
+  listen 80;
+  server_name _;
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # API + health checks go to the Python backend (strip the /api prefix).
+  location /api/ {
+    rewrite ^/api/(.*)$ /$$1 break;
+    proxy_pass ${BACKEND_URL};
+    proxy_set_header Host $$host;
+    proxy_set_header X-Real-IP $$remote_addr;
+    proxy_connect_timeout 300s;
+    proxy_send_timeout 300s;
+    proxy_read_timeout 300s;
+  }
+
+  # SPA fallback for everything else.
+  location / {
+    try_files $$uri $$uri/ /index.html;
+  }
+}

@@ -1,11 +1,20 @@
+# Default install: Voyage AI embeddings + Cohere rerank, fastembed (ONNX)
+# chunking, Ollama generation. No torch / transformers / sentence-transformers.
+# Needs VOYAGE_API_KEY (embeddings) + COHERE_API_KEY (rerank) in .env.
+# Usage: pip install -r requirements.txt
+
 langchain
 langchain-experimental
 langchain-community
-langchain-huggingface
 langchain-chroma
+langchain-cohere
+langchain-groq
+langchain-voyageai
 langchain-ollama
+cohere
+voyageai
+fastembed
 numpy
-sentence-transformers
 pypdf
 python-docx
 beautifulsoup4
@@ -13,10 +22,10 @@ requests
 sqlalchemy
 ftfy
 rapidfuzz
+rank-bm25
 chromadb
 faiss-cpu
 einops
 fastapi
 uvicorn
 python-dotenv
-rank-bm25

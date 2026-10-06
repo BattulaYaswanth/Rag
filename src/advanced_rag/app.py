@@ -38,8 +38,6 @@ class RAGPipeline:
         self.retriever = AdvancedRetriever(
             persist_directory=config.VECTOR_DB_DIR,
             collection_name=config.COLLECTION_NAME,
-            embedding_model_name=config.EMBEDDING_MODEL,
-            reranker_model_name=config.RERANKER_MODEL,
         )
         self.augmentor = ContextAugmentor()
         self.generator = RAGGenerator(

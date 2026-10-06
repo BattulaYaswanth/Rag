@@ -65,7 +65,7 @@ def run_pipeline(
 
     loader = DataLoader()
     cleaner = DataCleaner()
-    chunker = TextChunker(model_name="nomic-ai/nomic-embed-text-v1.5")
+    chunker = TextChunker()
     vector_mgr = VectorStoreManager()
 
     if vector_db_type == "chroma" and reset_collection:

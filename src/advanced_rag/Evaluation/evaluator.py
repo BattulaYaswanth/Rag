@@ -13,11 +13,10 @@ Module for RAG Evaluation & Feedback (claim-level judging):
 """
 
 import json
+import os
 import re
 from datetime import UTC, datetime
 from typing import Any
-
-from langchain_ollama import ChatOllama
 
 REFUSAL_PHRASES = (
     "cannot answer",
@@ -66,10 +65,29 @@ class RAGEvaluator:
 
     def __init__(
         self,
-        eval_model_name: str = "qwen2.5-coder:3b",
+        eval_model_name: str | None = None,
         log_file_path: str = "evaluation_logs.jsonl",
+        llm_provider: str | None = None,
     ):
-        self.llm = ChatOllama(model=eval_model_name, temperature=0.0)
+        """LLM-as-a-judge. Provider follows LLM_PROVIDER env (ollama|groq)."""
+        from advanced_rag import config as _config
+
+        provider = (llm_provider or os.getenv("LLM_PROVIDER", _config.LLM_PROVIDER)).lower()
+        if provider == "groq":
+            from langchain_groq import ChatGroq
+
+            api_key = os.getenv("GROQ_API_KEY", _config.GROQ_API_KEY)
+            if not api_key:
+                raise RuntimeError("GROQ_API_KEY is missing. Add it to .env.")
+            model = eval_model_name or os.getenv("GROQ_MODEL", _config.GROQ_MODEL)
+            self.llm = ChatGroq(model=model, temperature=0.0, api_key=api_key)
+        elif provider == "ollama":
+            from langchain_ollama import ChatOllama
+
+            model = eval_model_name or os.getenv("OLLAMA_MODEL", _config.OLLAMA_MODEL)
+            self.llm = ChatOllama(model=model, temperature=0.0)
+        else:
+            raise ValueError(f"Unknown LLM_PROVIDER '{provider}' (use ollama|groq).")
         self.log_file_path = log_file_path
 
     # -------------------------------------------------------------------------

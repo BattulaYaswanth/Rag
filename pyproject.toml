@@ -10,7 +10,6 @@ requires-python = ">=3.13"
 dependencies = [
     "beautifulsoup4>=4.15.0",
     "chromadb>=1.5.9",
-    "einops>=0.8.2",
     "faiss-cpu>=1.15.1",
     "fonttools>=4.66.1",
     "ftfy>=6.3.1",
@@ -19,7 +18,6 @@ dependencies = [
     "langchain-community>=0.4.2",
     "langchain-core>=1.6.6",
     "langchain-experimental>=0.4.2",
-    "langchain-huggingface>=1.2.2",
     "langgraph>=1.2.12",
     "numpy>=2.5.3",
     "pypdf>=6.19.0",
@@ -29,10 +27,12 @@ dependencies = [
     "rapidfuzz>=3.14.6",
     "requests>=2.34.2",
     "sqlalchemy>=2.1.2",
-    "sentence-transformers==3.3.1",
-    "transformers==4.46.3",
     "langchain-ollama>=1.1.0",
     "fastapi>=0.142.2",
+    "fastembed>=0.8.1",
+    "langchain-cohere>=0.6.0",
+    "langchain-voyageai>=0.4.1",
+    "langchain-groq>=1.1.3",
 ]
 [project.scripts]
 advanced-rag = "advanced_rag:main"
@@ -59,4 +59,3 @@ select = ["E", "F", "I", "UP", "B", "DTZ", "RUF"]
 # BLE001: broad `except Exception` is deliberate in eval/ingest fallback chains.
 # E501: long prompt/SQL string literals are exempt from line length.
 ignore = ["BLE001", "E501"]
-

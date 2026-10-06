@@ -1,7 +1,8 @@
 """
 retriever.py
 Module for retrieving context using Vector Similarity Search,
-Hybrid Search (BM25 + Dense Vectors), and Cross-Encoder Reranking.
+Hybrid Search (BM25 + Dense Vectors), and Cohere Reranking.
+Embeddings (ingest + retrieval) share the Cohere vector space.
 """
 
 import os
@@ -10,12 +11,12 @@ from pathlib import Path
 from typing import Any
 
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_cohere import CohereRerank
+from langchain_core.documents import Document
+from langchain_voyageai import VoyageAIEmbeddings
 from rank_bm25 import BM25Okapi
-from sentence_transformers import CrossEncoder
 
-# Prevent HuggingFace from attempting online checks if cached locally
-os.environ["HF_HUB_OFFLINE"] = "1"
+from advanced_rag import config as _config
 
 # Word tokens (alphanumeric runs) — punctuation-attached forms like
 # "language." and "language" must match the same term.
@@ -117,18 +118,19 @@ class AdvancedRetriever:
         self,
         persist_directory: str = DEFAULT_DB_DIR,
         collection_name: str = "rag_collection",
-        embedding_model_name: str = "nomic-ai/nomic-embed-text-v1.5",
-        reranker_model_name: str = "BAAI/bge-reranker-base",
+        embedding_model_name: str | None = None,
+        reranker_model_name: str | None = None,
     ):
-        print(f"Loading retriever embedding model '{embedding_model_name}'...")
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name=embedding_model_name,
-            model_kwargs={
-                "device": "cpu",
-                "trust_remote_code": True,
-            },
-            encode_kwargs={"normalize_embeddings": True},
-        )
+        cohere_key = os.getenv("COHERE_API_KEY", _config.COHERE_API_KEY)
+        if not cohere_key:
+            raise RuntimeError("COHERE_API_KEY is missing (reranker). Add it to .env.")
+        self._cohere_api_key = cohere_key
+        voyage_key = os.getenv("VOYAGE_API_KEY", _config.VOYAGE_API_KEY)
+        if not voyage_key:
+            raise RuntimeError("VOYAGE_API_KEY is missing. Add it to .env (see .env.example).")
+        embed_model = embedding_model_name or _config.VOYAGE_EMBED_MODEL
+        print(f"Loading Voyage embedding model '{embed_model}'...")
+        self.embeddings = VoyageAIEmbeddings(model=embed_model, voyage_api_key=voyage_key)
 
         from advanced_rag.Vector.chroma_client import describe_backend, get_chroma_client
 
@@ -140,18 +142,18 @@ class AdvancedRetriever:
             embedding_function=self.embeddings,
         )
 
-        self.reranker_model_name = reranker_model_name
-        self._reranker = None
+        self.reranker_model_name = reranker_model_name or _config.COHERE_RERANK_MODEL
         self._bm25 = None
         self._cleaned_corpus = None
         self._all_metas = None
 
-    @property
-    def reranker(self) -> CrossEncoder:
-        if self._reranker is None:
-            print(f"Loading Cross-Encoder Reranker '{self.reranker_model_name}'...")
-            self._reranker = CrossEncoder(self.reranker_model_name)
-        return self._reranker
+    def _make_reranker(self, top_n: int) -> CohereRerank:
+        """Fresh Cohere rerank client (API-side, cheap to construct)."""
+        return CohereRerank(
+            model=self.reranker_model_name,
+            cohere_api_key=self._cohere_api_key,
+            top_n=top_n,
+        )
 
     def invalidate_bm25_cache(self) -> None:
         """Clear cached BM25 index to force re-indexing on next search."""
@@ -203,9 +205,8 @@ class AdvancedRetriever:
         return expanded.strip()
 
     def _format_query(self, query: str) -> str:
-        """Ensures query carries search_query: prefix for Nomic models."""
-        clean = query.replace("search_query: ", "").replace("search_document: ", "").strip()
-        return f"search_query: {clean}"
+        """Strip legacy Nomic prefixes; Cohere handles query/document types itself."""
+        return query.replace("search_query: ", "").replace("search_document: ", "").strip()
 
     def _clean_doc_text(self, text: str) -> str:
         """Strips search_document: prefix from stored document text."""
@@ -284,12 +285,12 @@ class AdvancedRetriever:
         return [content_map[t] for t in sorted_texts]
 
     # -------------------------------------------------------------------------
-    # 3. Hybrid Search + Cross-Encoder Reranking
+    # 3. Hybrid Search + Cohere Reranking
     # -------------------------------------------------------------------------
     def rerank_search(
         self, query: str, top_k: int = 4, initial_fetch_k: int = 25
     ) -> list[dict[str, Any]]:
-        """Retrieves candidate chunks via Hybrid Search and rescores via Cross-Encoder."""
+        """Retrieves candidate chunks via Hybrid Search and rescores via Cohere Rerank."""
         clean_query = query.replace("search_query: ", "").replace("search_document: ", "").strip()
         expanded_query = self.expand_query(clean_query)
         candidates = self.hybrid_search(expanded_query, top_k=initial_fetch_k)
@@ -297,13 +298,22 @@ class AdvancedRetriever:
         if not candidates:
             return []
 
-        # Cross-encoder pairs between original question and chunk content
-        pairs = [[expanded_query, c["content"]] for c in candidates]
-        scores = self.reranker.predict(pairs)
+        # Cohere rerank over the candidate contents (API-side, input_type handled).
+        docs = [
+            Document(page_content=c["content"], metadata={"_idx": i})
+            for i, c in enumerate(candidates)
+        ]
+        reranked_docs = self._make_reranker(top_n=top_k).compress_documents(
+            documents=docs, query=expanded_query
+        )
 
-        for candidate, score in zip(candidates, scores, strict=True):
-            candidate["rerank_score"] = float(score)
-
-        reranked_results = sorted(candidates, key=lambda x: x["rerank_score"], reverse=True)[:top_k]
+        reranked_results = []
+        for doc in reranked_docs[:top_k]:
+            idx = doc.metadata.get("_idx")
+            if idx is None or idx >= len(candidates):
+                continue
+            candidate = candidates[idx]
+            candidate["rerank_score"] = float(doc.metadata.get("relevance_score", 0.0))
+            reranked_results.append(candidate)
 
         return reranked_results

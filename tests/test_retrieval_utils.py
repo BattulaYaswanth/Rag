@@ -30,6 +30,7 @@ def test_expand_query_acronyms():
 
 def test_format_query_prefix():
     r = AdvancedRetriever.__new__(AdvancedRetriever)  # no DB connection
-    assert r._format_query("hello") == "search_query: hello"
-    assert r._format_query("search_document: hello") == "search_query: hello"
-    assert r._clean_doc_text("search_document: hi") == "hi"
+    # No model prefixes: Cohere handles query/document types internally.
+    assert r._format_query("hello") == "hello"
+    assert r._format_query("search_document: hello") == "hello"
+    assert r._clean_doc_text("search_document: hi") == "hi"  # legacy index compat

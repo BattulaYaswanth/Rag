@@ -20,17 +20,26 @@ CHROMA_TENANT = os.getenv("CHROMA_TENANT", "")
 CHROMA_DATABASE = os.getenv("CHROMA_DATABASE", "")
 USE_CHROMA_CLOUD = bool(CHROMA_API_KEY)
 
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "nomic-ai/nomic-embed-text-v1.5")
-RERANKER_MODEL = os.getenv("RERANKER_MODEL", "BAAI/bge-reranker-base")
+# Embeddings: Voyage AI API for the shared vector space (ingest + retrieval
+# MUST use the same model). Rerank stays Cohere (text-based, needs no shared
+# space). fastembed (local ONNX) is only for semantic-chunk boundaries.
+VOYAGE_API_KEY = os.getenv("VOYAGE_API_KEY", "")
+VOYAGE_EMBED_MODEL = os.getenv("VOYAGE_EMBED_MODEL", "voyage-3")
+COHERE_API_KEY = os.getenv("COHERE_API_KEY", "")
+COHERE_RERANK_MODEL = os.getenv("COHERE_RERANK_MODEL", "rerank-english-v3.0")
+FASTEMBED_MODEL = os.getenv("FASTEMBED_MODEL", "BAAI/bge-small-en-v1.5")
 
-# Local generation via Ollama (`ollama serve` daemon, no API key needed).
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5-coder:3b")
+# --- Generation: Ollama for local dev, Groq for prod (LLM_PROVIDER picks) ---
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 
 # Retrieval / augmentation defaults.
 DEFAULT_TOP_K = int(os.getenv("RAG_TOP_K", "4"))
-# Rerank-score floor: bge-reranker-base scores run LOW on this corpus
-# (relevant hits ~0.02-0.7, out-of-scope junk ~0.001). Calibrated floor 0.01
-# keeps junk out while admitting relevant-but-low short-query hits.
+# Rerank-score floor (Cohere relevance 0-1). Recalibrate against a labeled
+# batch if you change COHERE_RERANK_MODEL; 0.01 admits relevant-but-weak
+# short-query hits while empty/junk retrieval still falls to fallback.
 DEFAULT_MIN_RERANK_SCORE = float(os.getenv("RAG_MIN_RERANK_SCORE", "0.01"))
 
 DOCS_DIR = os.getenv("DOCS_DIR", str(Path(__file__).resolve().parents[2] / "docs"))

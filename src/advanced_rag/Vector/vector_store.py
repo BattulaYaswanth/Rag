@@ -1,16 +1,19 @@
 """
 vector_store.py
-Module for generating embeddings and storing/indexing chunks in ChromaDB or FAISS.
-Supports standard chunks as well as Parent-Child hierarchical metadata.
+Module for generating embeddings (Voyage AI API) and storing/indexing chunks
+in ChromaDB or FAISS. Supports standard chunks and Parent-Child metadata.
 """
 
+import os
 from pathlib import Path
 from typing import Any
 
 from langchain_chroma import Chroma
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_voyageai import VoyageAIEmbeddings
+
+from advanced_rag import config as _config
 
 VECTOR_DIR = Path(__file__).resolve().parent
 DEFAULT_PERSIST_DIR = str(VECTOR_DIR.parent / "vector_db")
@@ -21,20 +24,15 @@ class VectorStoreManager:
 
     def __init__(
         self,
-        model_name: str = "nomic-ai/nomic-embed-text-v1.5",
+        model_name: str | None = None,
         persist_directory: str = DEFAULT_PERSIST_DIR,
     ):
-        print(f"Initializing Embedding Model ({model_name})...")
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name=model_name,
-            model_kwargs={
-                "device": "cpu",
-                "trust_remote_code": True,
-            },
-            encode_kwargs={
-                "normalize_embeddings": True,
-            },
-        )
+        model = model_name or _config.VOYAGE_EMBED_MODEL
+        api_key = os.getenv("VOYAGE_API_KEY", _config.VOYAGE_API_KEY)
+        if not api_key:
+            raise RuntimeError("VOYAGE_API_KEY is missing. Add it to .env (see .env.example).")
+        print(f"Initializing Voyage embedding model ({model})...")
+        self.embeddings = VoyageAIEmbeddings(model=model, voyage_api_key=api_key)
         self.persist_directory = persist_directory
 
     def _recreate_empty_collection(self, collection_name: str) -> Chroma:
