@@ -12,10 +12,9 @@ const http = require("node:http");
 const path = require("node:path");
 
 const PORT = Number(process.env.PORT || "3000");
-const BACKEND_URL = (process.env.BACKEND_URL || "http://host.containers.internal:8000").replace(
-  /\/+$/,
-  ""
-);
+const BACKEND_URL = (
+  process.env.BACKEND_URL || "http://host.containers.internal:8000"
+).replace(/\/+$/, "");
 const DIST = path.join(__dirname, "dist");
 
 const TYPES = {
@@ -35,7 +34,10 @@ function serveFile(res, filePath) {
       res.end("Not found");
       return;
     }
-    res.writeHead(200, { "Content-Type": TYPES[path.extname(filePath)] || "application/octet-stream" });
+    res.writeHead(200, {
+      "Content-Type":
+        TYPES[path.extname(filePath)] || "application/octet-stream",
+    });
     res.end(data);
   });
 }
@@ -56,7 +58,9 @@ function proxyApi(req, res) {
   });
   proxy.on("error", () => {
     res.writeHead(502, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ detail: `Backend unreachable at ${BACKEND_URL}` }));
+    res.end(
+      JSON.stringify({ detail: `Backend unreachable at ${BACKEND_URL}` }),
+    );
   });
   proxy.setTimeout(300000);
   req.pipe(proxy);
@@ -64,9 +68,12 @@ function proxyApi(req, res) {
 
 const server = http.createServer((req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
-  if (urlPath === "/api" || urlPath.startsWith("/api/")) return proxyApi(req, res);
+  if (urlPath === "/api" || urlPath.startsWith("/api/"))
+    return proxyApi(req, res);
 
-  const filePath = path.normalize(path.join(DIST, decodeURIComponent(urlPath.slice(1))));
+  const filePath = path.normalize(
+    path.join(DIST, decodeURIComponent(urlPath.slice(1))),
+  );
   if (!filePath.startsWith(DIST)) {
     res.writeHead(403, { "Content-Type": "text/plain" });
     res.end("Forbidden");
@@ -79,4 +86,6 @@ const server = http.createServer((req, res) => {
 });
 
 server.timeout = 0; // LLM answers can take minutes; rely on proxy timeout instead
-server.listen(PORT, () => console.log(`frontend on :${PORT}, backend ${BACKEND_URL}`));
+server.listen(PORT, () =>
+  console.log(`frontend on :${PORT}, backend ${BACKEND_URL}`),
+);
