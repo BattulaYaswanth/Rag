@@ -10,6 +10,7 @@ node_modules
 # Virtual environments
 .venv
 .env
+.env.prod
 .git
 vector_db
 ingest_run.log

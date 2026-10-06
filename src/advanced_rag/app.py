@@ -40,8 +40,11 @@ class RAGPipeline:
             collection_name=config.COLLECTION_NAME,
         )
         self.augmentor = ContextAugmentor()
+        # NOTE: llm_model=None lets RAGGenerator resolve the model from the
+        # active provider (OLLAMA_MODEL vs GROQ_MODEL). Never default it here
+        # or prod Groq would receive the Ollama model id.
         self.generator = RAGGenerator(
-            model_name=llm_model or config.OLLAMA_MODEL,
+            model_name=llm_model,
             temperature=temperature,
         )
         self.enable_eval = enable_eval
