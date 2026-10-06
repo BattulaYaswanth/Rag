@@ -1,0 +1,44 @@
+# Install once:  pre-commit install
+# Run manually: pre-commit run --all-files
+# Backend  = ruff (lint+format) + offline pytest. Frontend = prettier.
+repos:
+  # ---- Generic hygiene (both stacks) ----
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: [--fix=auto]
+      # Guards the 9MB DB tarball / sqlite / logs from ever being committed.
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+
+  # ---- Backend (Python): same gates as CI ----
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.10
+    hooks:
+      - id: ruff-check
+        files: ^(src|tests)/.*\.py$
+      - id: ruff-format
+        files: ^(src|tests)/.*\.py$
+
+  # ---- Frontend (JS/CSS/HTML): prettier, no local install needed ----
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        files: ^frontend/.*\.(jsx|js|css|html|json)$|^\.github/.*\.ya?ml$|.*\.md$
+        exclude: ^frontend/package-lock\.json$
+
+  # ---- Backend: offline unit tests (needs `uv sync --group dev` once) ----
+  - repo: local
+    hooks:
+      - id: pytest-offline
+        name: pytest offline unit tests
+        entry: uv run --no-sync pytest tests/ -q
+        language: system
+        pass_filenames: false
+        files: ^(src|tests)/.*\.py$

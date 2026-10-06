@@ -1,36 +1,31 @@
 """
 text_chunker.py
-Provides token-based, semantic, and hierarchical chunking strategies
-with automated document prefix formatting for Nomic models.
+Provides token-based, semantic, and hierarchical chunking strategies.
+Semantic chunking uses fastembed (local ONNX); chunk text carries no
+model-specific prefixes.
 """
 
+from langchain_community.embeddings import FastEmbedEmbeddings
 from langchain_experimental.text_splitter import SemanticChunker
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import (
     RecursiveCharacterTextSplitter,
     TokenTextSplitter,
 )
 
+from advanced_rag import config as _config
+
 
 class TextChunker:
-    """Provides chunking capabilities using open-source models."""
+    """Provides chunking capabilities (fastembed for semantic boundaries)."""
 
-    def __init__(self, model_name: str = "nomic-ai/nomic-embed-text-v1.5"):
-        print(f"Initializing HuggingFace embedding model '{model_name}'...")
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name=model_name,
-            model_kwargs={
-                "device": "cpu",
-                "trust_remote_code": True,
-            },
-            encode_kwargs={"normalize_embeddings": True},
-        )
+    def __init__(self, model_name: str | None = None):
+        model = model_name or _config.FASTEMBED_MODEL
+        print(f"Initializing fastembed model '{model}'...")
+        self.embeddings = FastEmbedEmbeddings(model_name=model)
 
     def _format_document(self, text: str) -> str:
-        """Appends 'search_document: ' prefix required by nomic-embed-text models."""
-        if not text.startswith("search_document: "):
-            return f"search_document: {text}"
-        return text
+        """Identity hook (legacy Nomic 'search_document: ' prefix removed)."""
+        return text.removeprefix("search_document: ").strip() or text.strip()
 
     def chunk_by_tokens(
         self, text: str, chunk_size: int = 256, chunk_overlap: int = 32

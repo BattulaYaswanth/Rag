@@ -6,12 +6,16 @@ dist/
 wheels/
 *.egg-info
 docs
+node_modules
 # Virtual environments
 .venv
 .env
 .git
 vector_db
 ingest_run.log
+backend_run.log
+docker_build.log
+frontend_build.log
 vector_db_backup.tar.gz
 evaluation_logs.jsonl
 docker_build*
