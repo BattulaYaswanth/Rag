@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-vault
+  namespace: rag
+spec:
+  ports:
+    - name: http
+      port: 8200
+      targetPort: 8200
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: external-vault
+  namespace: rag
+subsets:
+  - addresses:
+      - ip: 10.95.55.193  # Your host machine IP
+    ports:
+      - port: 8200
+        name: http

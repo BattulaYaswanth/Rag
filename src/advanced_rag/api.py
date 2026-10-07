@@ -60,19 +60,31 @@ class ChatCompletionRequest(BaseModel):
     messages: list[ChatMessage] = []
 
 
+def _active_llm() -> tuple[str, str]:
+    """(provider, model) actually serving traffic — never hardcoded.
+
+    The UI health badge and /v1 endpoints must reflect LLM_PROVIDER, or every
+    backend looks like local Ollama regardless of what generates answers.
+    """
+    provider = (config.LLM_PROVIDER or "ollama").lower()
+    model = config.GROQ_MODEL if provider == "groq" else config.OLLAMA_MODEL
+    return provider, model
+
+
 @app.get("/v1/models")
 def openai_models() -> dict[str, Any]:
     """Minimal model list so OpenAI-protocol clients stop 404-spamming."""
     import time as _time
 
+    provider, model = _active_llm()
     return {
         "object": "list",
         "data": [
             {
-                "id": config.OLLAMA_MODEL,
+                "id": model,
                 "object": "model",
                 "created": int(_time.time()),
-                "owned_by": "ollama",
+                "owned_by": provider,
             }
         ],
     }
@@ -94,7 +106,8 @@ def openai_chat_completion(req: ChatCompletionRequest) -> dict[str, Any]:
     pipe = _get_pipeline(req.model, False)
     result = pipe.ask(query)
     answer = result["answer"]
-    model_id = req.model or config.OLLAMA_MODEL
+    _, active_model = _active_llm()
+    model_id = req.model or active_model
     return {
         "id": f"chatcmpl-{_uuid.uuid4().hex[:12]}",
         "object": "chat.completion",
@@ -125,8 +138,9 @@ def _get_pipeline(model: str | None, evaluate: bool) -> RAGPipeline:
 def health() -> dict[str, Any]:
     from advanced_rag.Vector.chroma_client import describe_backend, get_chroma_client
 
+    provider, model = _active_llm()
     status: dict[str, Any] = {
-        "llm": {"provider": "ollama", "model": config.OLLAMA_MODEL},
+        "llm": {"provider": provider, "model": model},
     }
     try:
         client, mode = get_chroma_client()
