@@ -18,7 +18,7 @@ spec:
       containers:
         - name: ui
           # Pin a digest/SHA in real prod instead of :latest.
-          image: yashmanic/advanced-rag-frontend:sha-43c267b
+          image: yashmanic/advanced-rag-frontend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
