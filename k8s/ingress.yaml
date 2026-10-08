@@ -1,0 +1,36 @@
+# Public entry: /api/* -> backend (prefix stripped), everything else -> UI.
+# Requires an ingress controller: change ingressClassName for traefik
+# ("traefik" + a stripprefix middleware instead of the rewrite annotation).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rag
+  namespace: rag
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # Uncomment with cert-manager installed for automatic TLS:
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  # tls:
+  #   - hosts: ["rag.example.com"]
+  #     secretName: rag-tls
+  rules:
+    # !!! Replace with your domain (and point its DNS at the controller).
+    - host: rag.example.com
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: rag-backend
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rag-frontend
+                port:
+                  number: 3000

@@ -1,0 +1,15 @@
+# Apply everything with: kubectl apply -k k8s/
+# Secrets: local dev uses .env (see .env.example). For prod, add an
+# external-secrets/ store (e.g. Infisical/Vault) syncing to `rag-secrets`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - backend-deployment.yaml
+  - backend-service.yaml
+  - frontend-deployment.yaml
+  - frontend-service.yaml
+  - ingress.yaml

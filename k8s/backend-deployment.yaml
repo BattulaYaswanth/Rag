@@ -1,0 +1,58 @@
+# Backend: stateless FastAPI (embeddings/LLM/Chroma are all remote APIs),
+# so it scales horizontally.
+# NOTE on ingest: run ingestion as a one-off Job or scale this Deployment to
+# 1 replica first — two writers rebuilding one Chroma collection will race
+# (the app's .ingest.lock only guards a single process).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-backend
+  namespace: rag
+  labels:
+    app: rag-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rag-backend
+  template:
+    metadata:
+      labels:
+        app: rag-backend
+    spec:
+      containers:
+        - name: api
+          # Pin a digest/SHA in real prod instead of :latest.
+          image: yashmanic/advanced-rag:sha-43c267b
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: rag-config
+            - secretRef:
+                name: rag-secrets
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          # /health is cheap (config + Chroma metadata, no model loads).
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5      # Increased from 1s default
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5      # Increased from 1s default
+            failureThreshold: 3

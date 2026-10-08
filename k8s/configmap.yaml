@@ -1,0 +1,21 @@
+# Non-secret configuration (safe to commit).
+# Secrets (API keys) live in secret.yaml, referenced separately below.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rag-config
+  namespace: rag
+data:
+  # --- Generation (prod = Groq; dev overrides to ollama) ---
+  LLM_PROVIDER: "groq"
+  GROQ_MODEL: "openai/gpt-oss-20b"
+  # --- Embeddings (shared space) + rerank ---
+  VOYAGE_EMBED_MODEL: "voyage-3"
+  COHERE_RERANK_MODEL: "rerank-english-v3.0"
+  FASTEMBED_MODEL: "BAAI/bge-small-en-v1.5"
+  # --- Retrieval tuning ---
+  RAG_COLLECTION: "rag_collection"
+  RAG_TOP_K: "4"
+  RAG_MIN_RERANK_SCORE: "0.05"
+  # --- Frontend -> backend (in-cluster DNS) ---
+  BACKEND_URL: "http://rag-backend:8000"

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-frontend
+  namespace: rag
+  labels:
+    app: rag-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rag-frontend
+  template:
+    metadata:
+      labels:
+        app: rag-frontend
+    spec:
+      containers:
+        - name: ui
+          # Pin a digest/SHA in real prod instead of :latest.
+          image: yashmanic/advanced-rag-frontend:sha-43c267b
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            # In-cluster backend URL (keeps browser traffic off the public net
+            # for /api; the server.js proxy forwards it to rag-backend:8000).
+            - name: BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-config
+                  key: BACKEND_URL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            failureThreshold: 3

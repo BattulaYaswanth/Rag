@@ -44,8 +44,6 @@ export default function App() {
   const [health, setHealth] = useState(undefined);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [topK, setTopK] = useState(4);
-  const [evaluate, setEvaluate] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const logRef = useRef(null);
@@ -73,14 +71,14 @@ export default function App() {
     setMessages((m) => [...m, { role: "user", text: q }]);
     setBusy(true);
     try {
-      const res = await postQuery({ query: q, top_k: topK, evaluate });
+      const res = await postQuery({ query: q });
       setMessages((m) => [...m, { role: "assistant", ...res }]);
     } catch (e) {
       setError(`Query failed: ${e.message}. Is the backend running?`);
     } finally {
       setBusy(false);
     }
-  }, [input, busy, topK, evaluate]);
+  }, [input, busy]);
 
   return (
     <div className="page">
@@ -91,27 +89,6 @@ export default function App() {
         </div>
         <HealthBadge health={health} />
       </header>
-
-      <div className="controls">
-        <label>
-          Top-K
-          <input
-            type="number"
-            min={1}
-            max={10}
-            value={topK}
-            onChange={(e) => setTopK(Number(e.target.value) || 4)}
-          />
-        </label>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={evaluate}
-            onChange={(e) => setEvaluate(e.target.checked)}
-          />
-          Evaluate answer
-        </label>
-      </div>
 
       <div className="log" ref={logRef}>
         {messages.length === 0 && (

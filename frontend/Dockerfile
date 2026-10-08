@@ -4,9 +4,12 @@
 # NOTE: the ubi nodejs image runs as non-root `default`; build steps run as
 # root and the runtime drops back to `default`.
 #
-# Build:  podman build -t advanced-rag-frontend ./frontend
-# Run:    podman run -p 3000:3000 -e BACKEND_URL=http://host.containers.internal:8000 advanced-rag-frontend
+# Build:  docker build -t advanced-rag-frontend ./frontend
+# Run:    docker run -d --name rag-frontend -p 3000:3000 \
+#           --add-host host.docker.internal:host-gateway \
+#           -e BACKEND_URL=http://host.docker.internal:8000 advanced-rag-frontend
 # Browse: http://localhost:3000
+# (--add-host is needed on Linux; Docker Desktop resolves it automatically.)
 
 # ---------- Stage 1: build the static bundle ----------
 FROM registry.access.redhat.com/ubi9/nodejs-20:latest AS builder
