@@ -16,9 +16,11 @@ export function fetchHealth(signal) {
   return getJSON("/api/health", { signal });
 }
 
-export function postQuery({ query, top_k, evaluate }) {
+export function postQuery({ query }) {
+  // Retrieval knobs (top_k, thresholds, evaluate) live server-side:
+  // RAG_TOP_K / RAG_MIN_RERANK_SCORE env, QueryRequest defaults in api.py.
   return getJSON("/api/query", {
     method: "POST",
-    body: JSON.stringify({ query, top_k, evaluate: !!evaluate }),
+    body: JSON.stringify({ query }),
   });
 }

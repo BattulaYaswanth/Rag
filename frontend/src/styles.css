@@ -69,31 +69,6 @@ h1 {
   color: var(--muted);
 }
 
-.controls {
-  display: flex;
-  gap: 1.2rem;
-  align-items: center;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.controls input[type="number"] {
-  width: 3.2rem;
-  margin-left: 0.4rem;
-  background: var(--panel);
-  color: var(--text);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 0.25rem 0.4rem;
-}
-
-.check {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  cursor: pointer;
-}
-
 .log {
   border: 1px solid var(--line);
   border-radius: 10px;

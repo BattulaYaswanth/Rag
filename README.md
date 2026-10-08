@@ -83,11 +83,11 @@ API surface: `GET /health`, `POST /query {query, top_k, min_rerank_score?, model
 
 ## Running the container images
 
-Images (build with podman; Dockerfiles avoid docker.io-only bases):
+Images (Dockerfiles avoid docker.io-only bases, so podman works too):
 
 ```bash
-podman build -t advanced-rag-backend .
-podman build -t advanced-rag-frontend ./frontend
+docker build -t advanced-rag-backend .
+docker build -t advanced-rag-frontend ./frontend
 # published tags on main: <dockerhub-user>/advanced-rag[:latest,:sha]
 #                         <dockerhub-user>/advanced-rag-frontend[:latest,:sha]
 ```
@@ -95,9 +95,10 @@ podman build -t advanced-rag-frontend ./frontend
 Backend (needs `.env`; models/cache on volumes so rebuilds stay small):
 
 ```bash
-podman run -d --name rag-api -p 8000:8000 \
+docker run -d --name rag-api -p 8000:8000 \
   --env-file .env \
-  -e OLLAMA_HOST=http://host.containers.internal:11434 \
+  --add-host host.docker.internal:host-gateway \
+  -e OLLAMA_HOST=http://host.docker.internal:11434 \
   -v rag-models:/models \
   -v rag-data:/data \
   advanced-rag-backend
@@ -107,32 +108,36 @@ curl http://localhost:8000/health
 Frontend (port 3000, proxies `/api/*` to the backend):
 
 ```bash
-podman run -d --name rag-frontend -p 3000:3000 \
-  -e BACKEND_URL=http://host.containers.internal:8000 \
+docker run -d --name rag-frontend -p 3000:3000 \
+  --add-host host.docker.internal:host-gateway \
+  -e BACKEND_URL=http://host.docker.internal:8000 \
   advanced-rag-frontend
 # open http://localhost:3000
 ```
+(`--add-host …:host-gateway` is needed on Linux; Docker Desktop resolves
+`host.docker.internal` automatically.)
 
-Or run both in one pod (containers then reach each other on localhost):
+Or run both on one user-defined network (containers then reach each other by name):
 
 ```bash
-podman pod create --name rag -p 8000:8000 -p 3000:3000
-podman run -d --pod rag --env-file .env -e OLLAMA_HOST=http://host.containers.internal:11434 \
+docker network create rag-net
+docker run -d --network rag-net --env-file .env -e OLLAMA_HOST=http://host.docker.internal:11434 \
+  --add-host host.docker.internal:host-gateway \
   -v rag-models:/models -v rag-data:/data --name rag-api advanced-rag-backend
-podman run -d --pod rag -e BACKEND_URL=http://127.0.0.1:8000 --name rag-frontend advanced-rag-frontend
+docker run -d --network rag-net -p 3000:3000 -e BACKEND_URL=http://rag-api:8000 \
+  --name rag-frontend advanced-rag-frontend
 ```
 
 Ingest from inside the backend image (docs + caches mounted):
 
 ```bash
-podman run --rm --env-file .env \
+docker run --rm --env-file .env \
   -v ./docs:/app/docs:ro -e DOCS_DIR=/app/docs \
   -v rag-models:/models -v rag-data:/data \
   advanced-rag-backend python -m advanced_rag.app ingest /app/docs --strategy recursive
 ```
 
-Housekeeping: `podman logs rag-api`, `podman stop rag-api rag-frontend`, `podman rm rag-api rag-frontend`.
-`host.containers.internal` needs a backend/Ollama listening on all interfaces (`--host 0.0.0.0`).
+Housekeeping: `docker logs rag-api`, `docker stop rag-api rag-frontend`, `docker rm rag-api rag-frontend`.
 
 ## Checks, CI, git
 

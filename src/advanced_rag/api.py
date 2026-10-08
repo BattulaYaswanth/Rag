@@ -26,7 +26,9 @@ app = FastAPI(title="Advanced RAG API")
 
 class QueryRequest(BaseModel):
     query: str = Field(min_length=1)
-    top_k: int = 4
+    # Server-side knobs: top_k falls back to RAG_TOP_K env (config);
+    # min_rerank_score falls back to RAG_MIN_RERANK_SCORE. Clients send query only.
+    top_k: int = config.DEFAULT_TOP_K
     min_rerank_score: float | None = None
     model: str | None = None
     evaluate: bool = False

@@ -8,12 +8,14 @@
 # lives on /models, not in image layers. (LLM weights stay in Ollama;
 # Cohere is API-side.) Local ChromaDB (when CHROMA_API_KEY is empty) on /data.
 #
-# Build:  podman build -t advanced-rag-backend .
-# Run:    podman run -d --name rag-api -p 8000:8000 --env-file .env \
+# Build:  docker build -t advanced-rag-backend .
+# Run:    docker run -d --name rag-api -p 8000:8000 --env-file .env \
+#           --add-host host.docker.internal:host-gateway \
+#           -e OLLAMA_HOST=http://host.docker.internal:11434 \
 #           -v rag-models:/models -v rag-data:/data \
-#           -e OLLAMA_HOST=http://host.containers.internal:11434 \
 #           advanced-rag-backend
 # NOTE: langchain-ollama honors OLLAMA_HOST to reach host-side Ollama.
+# (--add-host is needed on Linux; Docker Desktop resolves it automatically.)
 # NOTE: COHERE_API_KEY must be in .env. Re-ingest after switching stacks:
 # the embedding space changed, so old Nomic vectors are not comparable.
 
